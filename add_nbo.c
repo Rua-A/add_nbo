@@ -7,35 +7,67 @@
 #include<sys/stat.h>
 #include<fcntl.h>
 
-int main(int argc, char *argv[3]){
+uint32_t to_big(uint32_t bits32);//빅엔디안으로 변환
+uint32_t to_little(uint32_t bits32);//리틀엔디안으로 변환
+
+int main(int argc, char *argv[2]){
 	
+	const int check = 1;
 	FILE *input1, *input2;
-	//char *buf1[3]={0,}, *buf2[3]={0,};
-	uint32_t a1[1],a2[1];
-	uint32_t add1, add2, result1, result2;
-	int i;
-	
-	if(argc < 3 ){
-		printf("Usage : %s <file1> <file2>\n",argv[0]);
-		return 0;
+	uint32_t in1[1],re1[1],in2[1],re2[1];
+
+	if((*(char*)&check)==0){
+		printf("big\n");
+		
+		input1 = fopen(argv[1],"rb");
+		input2 = fopen(argv[2],"rb");
+		
+		fread(in1,sizeof(uint32_t),1,input1);
+		re1[0] = to_little(in1[0]);
+		fread(in2,sizeof(uint32_t),1,input2);
+		re2[0] = to_little(in2[0]);
+
+		printf("%d(0x%x) + %d(0x%x) = %d(0x%x)\n",re1[0],re1[0],re2[0],re2[0],re1[0]+re2[0],re1[0]+re2[0]);
+	}
+	else{
+		printf("little\n");
+		
+		input1 = fopen(argv[1],"rb");
+		input2 = fopen(argv[2],"rb");
+
+		fread(in1,sizeof(uint32_t),1,input1);
+		re1[0] = to_big(in1[0]);
+		fread(in2,sizeof(uint32_t),1,input2);
+		re2[0] = to_big(in2[0]);
+
+		printf("%d(0x%x) + %d(0x%x) = %d(0x%x)\n",re1[0],re1[0],re2[0],re2[0],re1[0]+re2[0],re1[0]+re2[0]);
 	}
 
-	input1 = fopen(argv[1],"rb");
-	input2 = fopen(argv[2],"rb");
-	
-	fread(a1,sizeof(uint32_t),1,input1);
-	add1 = (*a1 & 0xFF000000) >> 8;
-	add2 = (*a1 & 0x00FF0000) << 8;
-	result1 = (add2|add1) >> 16;
-	
-	fread(a2,sizeof(uint32_t),1,input2);
-	add1 = (*a2 & 0xFF000000) >> 8;
-	add2 = (*a2 & 0x00FF0000) << 8;
-	result2 = (add2|add1) >>16;
-
-	printf("%d(0x%x) + %d(0x%x) = %d(0x%x)\n",result1,result1,result2,result2,result1+result2,result1+result2);
-	
 	fclose(input2);
 	fclose(input1);
 	return 0;
+}
+
+uint32_t to_big(uint32_t bits32){
+	uint32_t byte[4];
+	uint32_t ret;
+	
+	byte[0] = (uint32_t)((bits32 >> 0) & 0xff);
+ 	byte[1] = (uint32_t)((bits32 >> 8) & 0xff);
+	byte[2] = (uint32_t)((bits32 >> 16) & 0xff);
+	byte[3] = (uint32_t)((bits32 >> 24) & 0xff);
+
+	return ((uint32_t)byte[0] << 24)|((uint32_t)byte[1] << 16)|((uint32_t)byte[2] << 8)|((uint32_t)byte[3] << 0);	
+}
+
+uint32_t to_little(uint32_t bits32){
+	uint32_t byte[4];
+	uint32_t ret;
+
+	byte[0] = (uint32_t)((bits32 >> 0) & 0xff);
+	byte[1] = (uint32_t)((bits32 >> 8) & 0xff);
+	byte[2] = (uint32_t)((bits32 >> 16) & 0xff);
+	byte[3] = (uint32_t)((bits32 >> 24) & 0xff);
+	
+	return ((uint32_t)byte[0] << 0) |((uint32_t)byte[1] << 8)|((uint32_t)byte[2] << 16)|((uint32_t)byte[3] <<24);
 }
